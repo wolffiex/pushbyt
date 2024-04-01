@@ -2,21 +2,31 @@ import tempfile
 import subprocess
 import os
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageFont, ImageDraw
 from rich.console import Console
 
 console = Console()
-sprites = Path("./sprites")
-frame_files = [f for f in sorted(os.listdir(sprites)) if f.startswith("frame")]
+font = ImageFont.truetype("./fonts/pixelmix/pixelmix.ttf", 8)
 
-def convert_image(file):
-    png_image = Image.open(sprites / file)
+def convert_image(image):
     temp_file = tempfile.NamedTemporaryFile(suffix=".webp", delete=True)
-    png_image.save(temp_file.name, "WebP")
+    image.save(temp_file.name, "WebP")
     return temp_file
 
-tempfiles = [convert_image(file) for file in frame_files]
-frames = " ".join(f'-frame {f.name} +1000' for f in tempfiles)
+def make_frame(num):
+    # Create a new image with a black background
+    width, height = 64, 32
+    image = Image.new("RGB", (width, height), "black")
+    text = f"{num:04d}"
+    position = (10, 10)
+    draw = ImageDraw.Draw(image)
+    draw.text(position, text, font=font, fill=(255, 255, 255))
+    return image
+
+frame_time = 100
+images = [make_frame(n) for n in range(1,150)]
+tempfiles = [convert_image(image) for image in images]
+frames = " ".join(f'-frame {f.name} +{frame_time}' for f in tempfiles)
 print(frames)
 cmd = f"webpmux {frames} -loop 10 -bgcolor 255,255,255,255 -o out.webp"
 print(cmd)
