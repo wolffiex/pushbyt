@@ -4,34 +4,31 @@ import os
 import requests
 from io import BytesIO
 from PIL import Image
-from pathlib import Path
-import tempfile
 
 
 TIDBYT_API_PUSH = "https://api.tidbyt.com/v0/devices/%s/push"
 def push(device_id, installation_id, background):
-    api_token = os.getenv("TIDBYT_TOKEN")
+    with open("out.webp", "rb") as image_file:
+        image = image_file.read()
+        api_token = os.getenv("TIDBYT_TOKEN")
 
-    if not api_token:
-        raise ValueError(f"Blank Tidbyt API token (set TIDBYT_TOKEN)")
+        if not api_token:
+            raise ValueError(f"Blank Tidbyt API token (set TIDBYT_TOKEN)")
 
-    # Get the image data from the BytesIO object
-    image_data = create()
+        payload = {
+            "deviceID": device_id,
+            "image": base64.b64encode(image).decode("utf-8"),
+            "installationID": installation_id,
+            "background": background,
+        }
 
-    payload = {
-        "deviceID": device_id,
-        "image": base64.b64encode(image_data).decode("utf-8"),
-        "installationID": installation_id,
-        "background": background,
-    }
+        headers = {"Authorization": f"Bearer {api_token}"}
+        response = requests.post(TIDBYT_API_PUSH % device_id, json=payload, headers=headers)
 
-    headers = {"Authorization": f"Bearer {api_token}"}
-    response = requests.post(TIDBYT_API_PUSH % device_id, json=payload, headers=headers)
-
-    if response.status_code != 200:
-        print(f"Tidbyt API returned status {response.status_code}")
-        print(response.text)
-        raise ValueError(f"Tidbyt API returned status: {response.status_code}")
+        if response.status_code != 200:
+            print(f"Tidbyt API returned status {response.status_code}")
+            print(response.text)
+            raise ValueError(f"Tidbyt API returned status: {response.status_code}")
 
 def create():
     with open("out.webp", "rb") as anim:
@@ -77,37 +74,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     push(args.device_id, args.installation_id, args.background)
-
-
-# pass input_images(.webp image) path with FRAME_OPTIONS, as array,ouput image will be animated .webp image
-
-# https://developers.google.com/speed/webp/docs/webpmux
-# FRAME_OPTIONS
-
-# -file_i +di[+xi+yi[+mi[bi]]]
-
-# e.g -frame one.webp +100 -frame two.webp +100+50+50 -frame three.webp +100+50+50+1+b
-
-# Where: file_i is the i'th frame (WebP format), xi,yi specify the image offset for this frame,
-# di is the pause duration before next frame, mi is the dispose method for this frame (0 for NONE or 1 for BACKGROUND)
-# and bi is the blending method for this frame (+b for BLEND or -b for NO_BLEND).
-# Argument bi can be omitted and will default to +b (BLEND). Also, mi can be omitted if bi is omitted and
-# will default to 0 (NONE). Finally,
-# if mi and bi are omitted then xi and yi can be omitted and will default to +0+0.
-
-# -loop n
-
-# e.g 10
-
-# Loop the frames n number of times. 0 indicates the frames should loop forever.
-# Valid range is 0 to 65535 [Default: 0 (infinite)].
-
-# -bgcolor A,R,G,B
-
-# e.g 255,255,255,255
-
-# Background color of the canvas. Where: A, R, G and B are integers in the range 0 to 255 specifying
-# the Alpha, Red, Green and Blue component values respectively [Default: 255,255,255,255].
-
-# now read anim_container file and return as BtyesIO
 

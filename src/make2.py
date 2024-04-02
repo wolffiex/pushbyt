@@ -10,7 +10,7 @@ font = ImageFont.truetype("./fonts/pixelmix/pixelmix.ttf", 8)
 
 def convert_image(image):
     temp_file = tempfile.NamedTemporaryFile(suffix=".webp", delete=True)
-    image.save(temp_file.name, "WebP")
+    image.save(temp_file.name, "WebP", quality=100)
     return temp_file
 
 def make_frame(num):
@@ -27,9 +27,7 @@ frame_time = 100
 images = [make_frame(n) for n in range(1,150)]
 tempfiles = [convert_image(image) for image in images]
 frames = " ".join(f'-frame {f.name} +{frame_time}' for f in tempfiles)
-print(frames)
 cmd = f"webpmux {frames} -loop 10 -bgcolor 255,255,255,255 -o out.webp"
-print(cmd)
 result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
 
 # Check the return code
