@@ -23,26 +23,21 @@ def make_frame(num):
     draw.text(position, text, font=font, fill=(255, 255, 255))
     return image
 
+# https://developers.google.com/speed/webp/docs/webpmux
 frame_time = 100
-images = [make_frame(n) for n in range(1,150)]
-tempfiles = [convert_image(image) for image in images]
-frames = " ".join(f'-frame {f.name} +{frame_time}' for f in tempfiles)
-cmd = f"webpmux {frames} -loop 10 -bgcolor 255,255,255,255 -o out.webp"
-result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+frame_ranges = [range(i * 150, (i + 1) * 150) for i in range(10)]
+for i, fr in enumerate(frame_ranges):
+    images = [make_frame(n+1) for n in fr]
+    tempfiles = [convert_image(image) for image in images]
+    frames = " ".join(f'-frame {f.name} +{frame_time}' for f in tempfiles)
+    outname = f"out_{i:02d}.webp"
+    cmd = f"webpmux {frames} -loop 1 -bgcolor 255,255,255,255 -o {outname}"
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    # Check the return code
+    if result.returncode != 0:
+        console.print("Command execution failed", style="red")
+        print(result.stderr)
+        exit(1)
 
-# Check the return code
-if result.returncode != 0:
-    console.print("Command execution failed", style="red")
-    print(result.stderr)
-
-for temp_file in tempfiles:
-    temp_file.close()
-
-# print(webpmux_animate(input_images=tempfiles, output_image="anim_container.webp",
-#                       loop="10", bgcolor="255,255,255,255"))
-
-
-# webpmux  -frame /var/folders/3v/jl2nyhvx0fv2qfy6yz4fh9cw0000gn/T/tmp_bp7j2zq.webp +100 
-#           -frame /var/folders/3v/jl2nyhvx0fv2qfy6yz4fh9cw0000gn/T/tmp2c4idylv.webp +100
-#           -fram /var/folders/3v/jl2nyhvx0fv2qfy6yz4fh9cw0000gn/T/tmpx821h6zz.webp +100 
-#           -loop 10 -bgcolor 255,255,255,255 -o anim_container.webp
+    for temp_file in tempfiles:
+        temp_file.close()
