@@ -17,7 +17,7 @@ if not api_token:
 base_url = TIDBYT_API + f"devices/{args.device_id}/installations/"
 
 headers = {"Authorization": f"Bearer {api_token}"}
-for i in range(10):
+for i in range(5):
 
     url = base_url + f"id{i:02d}"
     console.print(url)

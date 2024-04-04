@@ -8,7 +8,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     with open("dist/black.webp", "rb") as image_file:
         image_bytes = image_file.read()
-        for i in range(20):
+        for i in range(4):
             installation_id = f"black{i:02d}"
             push(image_bytes, args.device_id, installation_id, True)
 
