@@ -1,8 +1,11 @@
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont, ImageChops
 import math
 import os
 import random
 from dataclasses import dataclass
+from typing import Dict, Tuple
+from collections import defaultdict
+
 
 @dataclass(frozen=True)
 class Point:
@@ -12,6 +15,7 @@ class Point:
     def to_tuple(self):
         return (self.x, self.y)
 
+
 WIDTH, HEIGHT = 64, 32
 FRAME_DURATION = 100  # ms per frame (10fps)
 SCALE_FACTOR = 4
@@ -19,9 +23,27 @@ CENTER = Point(SCALE_FACTOR * (WIDTH - 1) / 2, SCALE_FACTOR * (HEIGHT - 1) / 2)
 SCALED_WIDTH, SCALED_HEIGHT = SCALE_FACTOR * WIDTH, SCALE_FACTOR * HEIGHT
 
 
-image = Image.new("RGB", (WIDTH, HEIGHT), color="black")
-frames = [Image.new("RGB", (WIDTH, HEIGHT), color="black")]
+def get_time_pixels(time_str):
+    image = Image.new("RGB", (WIDTH, HEIGHT), color="black")
+    font = ImageFont.truetype("./fonts/pixelmix/pixelmix.ttf", 8)
+    draw = ImageDraw.Draw(image)
+    text_position = (0, 0)
+    bbox = draw.textbbox(text_position, time_str, font=font)
+    left, top, right, bottom = bbox
+    text_width = right - left
+    text_height = bottom - top
 
+    # Calculate the new coordinates to center the bounding box
+    new_left = (WIDTH - text_width) // 2
+    new_top = (HEIGHT - text_height) // 2
+    draw.text((new_left, new_top), time_str, font=font, fill="white")
+    pixels = image.load()
+    return [
+        (x, y) for x in range(WIDTH) for y in range(HEIGHT) if pixels[x, y] != (0, 0, 0)
+    ]
+
+
+frames = [Image.new("RGB", (WIDTH, HEIGHT), color="black")]
 
 
 @dataclass
@@ -40,12 +62,19 @@ class Ray:
         return [self.start.to_tuple(), self.end.to_tuple()]
 
     def is_in_bounds(self):
-        return self.start.x >=0 and self.start.x < SCALED_WIDTH and self.start.y >=0 and self.start.y < SCALED_HEIGHT
+        return (
+            self.start.x >= 0
+            and self.start.x < SCALED_WIDTH
+            and self.start.y >= 0
+            and self.start.y < SCALED_HEIGHT
+        )
 
     def animate(self):
         self._start += 0.04
         self._end += 0.06
-        self.color = tuple(max(0, min(255, a + b)) for a, b in zip(self.color, (-10, 0, 10)))
+        self.color = tuple(
+            max(0, min(255, a + b)) for a, b in zip(self.color, (-10, 0, 10))
+        )
         assert len(self.color) == 3
 
     @property
@@ -62,11 +91,20 @@ class Ray:
         return Point(x, y)
 
 
+def luminance(rgb):
+    r, g, b = rgb
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
 frames = []
 rays = []
+time_pixels: Dict[Tuple[int, int], Tuple[int, int, int]] = defaultdict(
+    lambda: (0, 0, 0)
+)
+all_time_pixels = get_time_pixels("12:45")
 for _ in range(500):
     num_rays = len(rays)
-    if random.random() > num_rays / 10:
+    if random.random() > num_rays / 20:
         rays.append(Ray.new())
     image = Image.new("RGB", (SCALED_WIDTH, SCALED_HEIGHT), color="black")
     draw = ImageDraw.Draw(image)
@@ -76,7 +114,16 @@ for _ in range(500):
 
     # Downsample the high-resolution image to the desired size
     image_lo = image.resize((WIDTH, HEIGHT), resample=Image.LANCZOS)
-    frames.append(image_lo)
+    time_image = Image.new("RGB", (WIDTH, HEIGHT), color="black")
+    image_pixels = image_lo.load()
+    for x, y in all_time_pixels:
+        ray_rgb = image_pixels[x, y]
+        if luminance(ray_rgb) > luminance(time_pixels[x, y]):
+            time_pixels[x, y] = image_pixels[x, y]
+
+        time_image.putpixel((x, y), time_pixels[x, y])
+
+    frames.append(ImageChops.screen(image_lo, time_image))
     rays = [ray for ray in rays if ray.is_in_bounds()]
 
 os.makedirs("dist", exist_ok=True)
