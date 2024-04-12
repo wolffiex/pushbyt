@@ -19,7 +19,7 @@ class Point:
 WIDTH, HEIGHT = 64, 32
 FRAME_DURATION = 100  # ms per frame (10fps)
 SCALE_FACTOR = 4
-CENTER = Point(SCALE_FACTOR * (WIDTH - 1) / 2, SCALE_FACTOR * (HEIGHT - 1) / 2)
+CENTER = Point(SCALE_FACTOR * WIDTH / 2, SCALE_FACTOR * HEIGHT / 2)
 SCALED_WIDTH, SCALED_HEIGHT = SCALE_FACTOR * WIDTH, SCALE_FACTOR * HEIGHT
 
 
@@ -44,6 +44,12 @@ def get_time_pixels(time_str):
 
 
 frames = [Image.new("RGB", (WIDTH, HEIGHT), color="black")]
+
+
+def combine_colors(aa, bb):
+    color = tuple(max(0, min(255, a + b)) for a, b in zip(aa, bb))
+    assert len(color) == 3
+    return color
 
 
 @dataclass
@@ -72,9 +78,7 @@ class Ray:
     def animate(self):
         self._start += 0.04
         self._end += 0.06
-        self.color = tuple(
-            max(0, min(255, a + b)) for a, b in zip(self.color, (-10, 0, 10))
-        )
+        self.color = combine_colors(self.color, (-10, 0, 10))
         assert len(self.color) == 3
 
     @property
@@ -98,14 +102,14 @@ def luminance(rgb):
 
 frames = []
 rays = []
-time_pixels: Dict[Tuple[int, int], Tuple[int, int, int]] = defaultdict(
-    lambda: (0, 0, 0)
-)
 all_time_pixels = get_time_pixels("12:45")
+black_image = Image.new("RGB", (WIDTH, HEIGHT), color="black")
+time_image = black_image.copy()
 for _ in range(500):
     num_rays = len(rays)
-    if random.random() > num_rays / 20:
+    for _ in range(random.randint(1, 4)):
         rays.append(Ray.new())
+
     image = Image.new("RGB", (SCALED_WIDTH, SCALED_HEIGHT), color="black")
     draw = ImageDraw.Draw(image)
     for ray in rays:
@@ -114,16 +118,16 @@ for _ in range(500):
 
     # Downsample the high-resolution image to the desired size
     image_lo = image.resize((WIDTH, HEIGHT), resample=Image.LANCZOS)
-    time_image = Image.new("RGB", (WIDTH, HEIGHT), color="black")
     image_pixels = image_lo.load()
+    time_pixels = time_image.load()
     for x, y in all_time_pixels:
-        ray_rgb = image_pixels[x, y]
-        if luminance(ray_rgb) > luminance(time_pixels[x, y]):
-            time_pixels[x, y] = image_pixels[x, y]
-
-        time_image.putpixel((x, y), time_pixels[x, y])
+        time_image.putpixel(
+            (x, y), combine_colors(image_pixels[x, y], time_pixels[x, y])
+        )
 
     frames.append(ImageChops.screen(image_lo, time_image))
+    # fade time image
+    time_image = Image.blend(time_image, black_image, alpha=0.04)
     rays = [ray for ray in rays if ray.is_in_bounds()]
 
 os.makedirs("dist", exist_ok=True)
