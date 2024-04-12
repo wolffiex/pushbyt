@@ -33,30 +33,19 @@ def find_intersection(angle):
 
     return x, y
 
-
-@dataclass
-class Point:
-    x: float
-    y: float
-
-    def to_tuple(self):
-        return self.x, self.y
-
-
 STEPS = 100
 SCALE_FACTOR = 4
-center = Point(SCALE_FACTOR * (width - 1) / 2, SCALE_FACTOR * (height - 1) / 2)
+center = SCALE_FACTOR * (width - 1) / 2, SCALE_FACTOR * (height - 1) / 2
+scaled = SCALE_FACTOR * width, SCALE_FACTOR * height
 for step in range(STEPS):
     angle = 2 * math.pi * step / 100
-    image = Image.new("RGB", (SCALE_FACTOR * width, SCALE_FACTOR * height), color="black")
+    image = Image.new("RGB", scaled, color="black")
     draw = ImageDraw.Draw(image)
 
-    length = 100 * SCALE_FACTOR  # somewhat arbirary chosen to extend beyond boundary
-    end = Point(
-        center.x + length * math.cos(angle), center.y + length * math.sin(angle)
-    )
+    length = 64 * SCALE_FACTOR  # somewhat arbirary chosen to extend beyond boundary
+    end = center[0] + length * math.cos(angle), center[1] + length * math.sin(angle)
 
-    draw.line([center.to_tuple(), end.to_tuple()], fill="white", width=SCALE_FACTOR)
+    draw.line([center, end], fill="white", width=SCALE_FACTOR)
 
     # Downsample the high-resolution image to the desired size
     image_lo = image.resize((width, height), resample=Image.LANCZOS)
