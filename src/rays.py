@@ -29,6 +29,7 @@ class Ray:
     angle: float
     _start: float = 0.0
     _end: float = 0.01
+    color = (255, 150, 150)
 
     @classmethod
     def new(cls):
@@ -44,6 +45,8 @@ class Ray:
     def animate(self):
         self._start += 0.04
         self._end += 0.06
+        self.color = tuple(max(0, min(255, a + b)) for a, b in zip(self.color, (-10, 0, 10)))
+        assert len(self.color) == 3
 
     @property
     def start(self):
@@ -60,22 +63,21 @@ class Ray:
 
 
 frames = []
-for _ in range(20):
-    ray = Ray.new()
-    color = (255, 150, 150)
-    while ray.is_in_bounds():
-        image = Image.new("RGB", (SCALED_WIDTH, SCALED_HEIGHT), color="black")
-        draw = ImageDraw.Draw(image)
-        color = tuple(max(0, min(255, a + b)) for a, b in zip(color, (-10, 0, 10)))
-        assert len(color) == 3
-        draw.line(ray.to_line(), fill=color, width=SCALE_FACTOR)
-        # Downsample the high-resolution image to the desired size
-        image_lo = image.resize((WIDTH, HEIGHT), resample=Image.LANCZOS)
-        frames.append(image_lo)
+rays = []
+for _ in range(500):
+    num_rays = len(rays)
+    if random.random() > num_rays / 10:
+        rays.append(Ray.new())
+    image = Image.new("RGB", (SCALED_WIDTH, SCALED_HEIGHT), color="black")
+    draw = ImageDraw.Draw(image)
+    for ray in rays:
+        draw.line(ray.to_line(), fill=ray.color, width=SCALE_FACTOR)
         ray.animate()
-        # i += 1
-        # if i > 10:
-        #     break
+
+    # Downsample the high-resolution image to the desired size
+    image_lo = image.resize((WIDTH, HEIGHT), resample=Image.LANCZOS)
+    frames.append(image_lo)
+    rays = [ray for ray in rays if ray.is_in_bounds()]
 
 os.makedirs("dist", exist_ok=True)
 frames[0].save(
