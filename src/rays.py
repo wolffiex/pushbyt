@@ -28,7 +28,7 @@ frames = [Image.new("RGB", (WIDTH, HEIGHT), color="black")]
 class Ray:
     angle: float
     _start: float = 0.0
-    _end: float = 0.1
+    _end: float = 0.01
 
     @classmethod
     def new(cls):
@@ -42,8 +42,8 @@ class Ray:
         return self.start.x >=0 and self.start.x < SCALED_WIDTH and self.start.y >=0 and self.start.y < SCALED_HEIGHT
 
     def animate(self):
-        self._start += 0.03
-        self._end += 0.04
+        self._start += 0.04
+        self._end += 0.06
 
     @property
     def start(self):
