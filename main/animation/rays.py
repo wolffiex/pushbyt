@@ -1,10 +1,8 @@
 from PIL import Image, ImageDraw, ImageFont, ImageChops
 import math
-import os
 import random
 from dataclasses import dataclass
-from typing import Dict, Tuple
-from collections import defaultdict
+from typing import List
 
 
 @dataclass(frozen=True)
@@ -17,7 +15,6 @@ class Point:
 
 
 WIDTH, HEIGHT = 64, 32
-FRAME_DURATION = 100  # ms per frame (10fps)
 SCALE_FACTOR = 4
 CENTER = Point(SCALE_FACTOR * WIDTH / 2, SCALE_FACTOR * HEIGHT / 2)
 SCALED_WIDTH, SCALED_HEIGHT = SCALE_FACTOR * WIDTH, SCALE_FACTOR * HEIGHT
@@ -100,42 +97,43 @@ def luminance(rgb):
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
 
 
-frames = []
-rays = []
-all_time_pixels = get_time_pixels("12:45")
-black_image = Image.new("RGB", (WIDTH, HEIGHT), color="black")
-time_image = black_image.copy()
-for _ in range(500):
-    num_rays = len(rays)
-    for _ in range(random.randint(1, 4)):
-        rays.append(Ray.new())
+def clock_rays() -> List[Image.Image]:
+    frames = []
+    rays = []
+    all_time_pixels = get_time_pixels("12:45")
+    black_image = Image.new("RGB", (WIDTH, HEIGHT), color="black")
+    time_image = black_image.copy()
+    for _ in range(500):
+        for _ in range(random.randint(1, 4)):
+            rays.append(Ray.new())
 
-    image = Image.new("RGB", (SCALED_WIDTH, SCALED_HEIGHT), color="black")
-    draw = ImageDraw.Draw(image)
-    for ray in rays:
-        draw.line(ray.to_line(), fill=ray.color, width=SCALE_FACTOR)
-        ray.animate()
+        image = Image.new("RGB", (SCALED_WIDTH, SCALED_HEIGHT), color="black")
+        draw = ImageDraw.Draw(image)
+        for ray in rays:
+            draw.line(ray.to_line(), fill=ray.color, width=SCALE_FACTOR)
+            ray.animate()
 
-    # Downsample the high-resolution image to the desired size
-    image_lo = image.resize((WIDTH, HEIGHT), resample=Image.LANCZOS)
-    image_pixels = image_lo.load()
-    time_pixels = time_image.load()
-    for x, y in all_time_pixels:
-        time_image.putpixel(
-            (x, y), combine_colors(image_pixels[x, y], time_pixels[x, y])
-        )
+        # Downsample the high-resolution image to the desired size
+        image_lo = image.resize((WIDTH, HEIGHT), resample=Image.LANCZOS)
+        image_pixels = image_lo.load()
+        time_pixels = time_image.load()
+        for x, y in all_time_pixels:
+            time_image.putpixel(
+                (x, y), combine_colors(image_pixels[x, y], time_pixels[x, y])
+            )
 
-    frames.append(ImageChops.screen(image_lo, time_image))
-    # fade time image
-    time_image = Image.blend(time_image, black_image, alpha=0.04)
-    rays = [ray for ray in rays if ray.is_in_bounds()]
+        frames.append(ImageChops.screen(image_lo, time_image))
+        # fade time image
+        time_image = Image.blend(time_image, black_image, alpha=0.04)
+        rays = [ray for ray in rays if ray.is_in_bounds()]
+    return frames
 
-os.makedirs("dist", exist_ok=True)
-frames[0].save(
-    "dist/animation.webp",
-    save_all=True,
-    append_images=frames[1:],
-    duration=FRAME_DURATION,
-    loop=0,
-    quality=100,
-)
+# os.makedirs("dist", exist_ok=True)
+# frames[0].save(
+#     "dist/animation.webp",
+#     save_all=True,
+#     append_images=frames[1:],
+#     duration=100,
+#     loop=0,
+#     quality=100,
+# )
