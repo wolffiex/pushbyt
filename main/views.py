@@ -7,7 +7,8 @@ import base64
 
 logger = logging.getLogger(__name__)
 
-def get_webp(request, name:str):
+
+def get_webp(request, name: str):
     logger.info(f"Anim {name}")
     frames = None
     if name == "rays":
@@ -25,21 +26,27 @@ def get_webp(request, name:str):
             loop=0,
             quality=100,
         )
-        response = HttpResponse(content_type='image/webp')
+        response = HttpResponse(content_type="image/webp")
         response.write(output.getvalue())
 
         return response
 
     raise Http404(f"Unknown animation {name}")
 
-def get_player(request, name:str):
+
+def get_player(request, name: str):
     frames = None
     if name == "rays":
         frames = clock_rays()
         frame_bytes = (encode_frame(frame) for frame in frames)
-        return render(request, "player.html", {"frames": frame_bytes, "title": name})
+        return render(
+            request,
+            "player.html",
+            {"frames": frame_bytes, "title": name, "frame_count": len(frames)},
+        )
 
     raise Http404(f"Unknown animation {name}")
+
 
 def encode_frame(frame):
     output = BytesIO()
@@ -48,4 +55,4 @@ def encode_frame(frame):
         format="WEBP",
         quality=100,
     )
-    return base64.b64encode(output.getvalue()).decode('utf-8')
+    return base64.b64encode(output.getvalue()).decode("utf-8")
