@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent
@@ -23,7 +24,7 @@ SECRET_KEY = "django-insecure-development"
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -77,7 +78,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": "pushbytdb",
         "USER": "adam",
-        "PASSWORD": "",
+        "PASSWORD": os.getenv("DB_PASSWORD", ""),
         "HOST": "localhost",
         "PORT": "5432",  # default PostgreSQL port
     }
@@ -135,6 +136,8 @@ STATIC_URL = "pushbyt/static/"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+STATIC_ROOT = os.path.join(BASE_DIR, 'dist/staticfiles')
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
