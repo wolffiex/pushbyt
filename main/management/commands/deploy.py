@@ -9,6 +9,8 @@ from main.animation.rays import clock_rays
 from io import BytesIO
 import requests
 from pathlib import Path
+from datetime import datetime
+import pytz
 
 FRAME_TIME = 100
 TIDBYT_API_PUSH = "https://api.tidbyt.com/v0/devices/%s/push"
@@ -22,12 +24,13 @@ class Command(RichCommand):
     def handle(self, *args, **options):
         print("[bold magenta]:ship: DEPLOY[/bold magenta]")
         try:
-            frames = clock_rays()
+            los_angeles_tz = pytz.timezone('America/Los_Angeles')
+            frames = clock_rays(datetime.now(los_angeles_tz))
             webp_files = self.render(frames)
             for i, webp in enumerate(webp_files):
                 with open(webp, 'rb') as file:
-                    # self.push(file.read(), options['device_id'], 'pb{i}', i == 0)
-                    pass
+                    self.console.print(f"file: {webp}")
+                    self.push(file.read(), options['device_id'], f'pb{i}', i == 0)
 
         except Exception as e:
             self.console.print_exception(show_locals=True)

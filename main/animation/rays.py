@@ -1,8 +1,10 @@
 from PIL import Image, ImageDraw, ImageFont, ImageChops
 import math
 import random
+from datetime import datetime, timedelta
 from dataclasses import dataclass
 from typing import List
+import pytz
 
 
 @dataclass(frozen=True)
@@ -92,18 +94,16 @@ class Ray:
         return Point(x, y)
 
 
-def luminance(rgb):
-    r, g, b = rgb
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b
-
-
-def clock_rays() -> List[Image.Image]:
+def clock_rays(start_time: datetime) -> List[Image.Image]:
+    print(start_time)
     frames = []
     rays = []
-    all_time_pixels = get_time_pixels("12:45")
     black_image = Image.new("RGB", (WIDTH, HEIGHT), color="black")
     time_image = black_image.copy()
-    for _ in range(500):
+    for ms in range(0, 60000, 100):
+        frame_time = start_time + timedelta(milliseconds=ms)
+        time_str = frame_time.strftime("%-I:%M")
+        all_time_pixels = get_time_pixels(time_str)
         for _ in range(random.randint(1, 4)):
             rays.append(Ray.new())
 
