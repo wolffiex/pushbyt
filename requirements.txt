@@ -4,6 +4,7 @@ certifi==2024.2.2
 charset-normalizer==3.3.2
 decorator==5.1.1
 django==5.0.4
+django-rich==1.8.0
 executing==2.0.1
 idna==3.6
 ipython==8.23.0
@@ -25,6 +26,7 @@ six==1.16.0
 sqlparse==0.5.0
 stack-data==0.6.3
 traitlets==5.14.2
+typing-extensions==4.11.0
 urllib3==2.2.1
 uuid==1.30
 wcwidth==0.2.13
