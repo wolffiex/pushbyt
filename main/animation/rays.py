@@ -21,10 +21,43 @@ SCALE_FACTOR = 4
 CENTER = Point(SCALE_FACTOR * WIDTH / 2, SCALE_FACTOR * HEIGHT / 2)
 SCALED_WIDTH, SCALED_HEIGHT = SCALE_FACTOR * WIDTH, SCALE_FACTOR * HEIGHT
 
+#  fonts
+# ├──  freecam
+# │  ├──  freecam v2.ttf
+# │  └──  readme.txt
+# ├──  pixel12x10
+# │  ├──  OFL.txt
+# │  ├──  Pixel12x10-v1.1.0.ttf
+# │  └──  Pixel12x10Mono-v1.1.0.ttf
+# ├──  pixel_operator
+# │  ├──  LICENSE.txt
+# │  ├──  PixelOperator-Bold.ttf
+# │  ├──  PixelOperator.ttf
+# │  ├──  PixelOperator8-Bold.ttf
+# │  ├──  PixelOperator8.ttf
+# │  ├──  PixelOperatorHB.ttf
+# │  ├──  PixelOperatorHB8.ttf
+# │  ├──  PixelOperatorHBSC.ttf
+# │  ├──  PixelOperatorMono-Bold.ttf
+# │  ├──  PixelOperatorMono.ttf
+# │  ├──  PixelOperatorMono8-Bold.ttf
+# │  ├──  PixelOperatorMono8.ttf
+# │  ├──  PixelOperatorMonoHB.ttf
+# │  ├──  PixelOperatorMonoHB8.ttf
+# │  ├──  PixelOperatorSC-Bold.ttf
+# │  └──  PixelOperatorSC.ttf
+# ├──  pixelmix
+# │  ├──  license.txt
+# │  ├──  pixelmix.ttf
+# │  ├──  pixelmix_bold.ttf
+# │  └──  readme.txt
+# └──  videotype.ttf
 
 def get_time_pixels(time_str):
     image = Image.new("RGB", (WIDTH, HEIGHT), color="black")
-    font = ImageFont.truetype("./fonts/pixelmix/pixelmix.ttf", 8)
+    # font = ImageFont.truetype("./fonts/pixelmix/pixelmix.ttf", 8)
+    # font = ImageFont.truetype("./fonts/freecam/freecam v2.ttf", 16)
+    font = ImageFont.truetype("./fonts/pixel12x10/Pixel12x10-v1.1.0.ttf", 16)
     draw = ImageDraw.Draw(image)
     text_position = (0, 0)
     bbox = draw.textbbox(text_position, time_str, font=font)
@@ -95,7 +128,6 @@ class Ray:
 
 
 def clock_rays(start_time: datetime) -> List[Image.Image]:
-    print(start_time)
     frames = []
     rays = []
     black_image = Image.new("RGB", (WIDTH, HEIGHT), color="black")
