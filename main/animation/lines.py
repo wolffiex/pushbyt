@@ -2,6 +2,8 @@ from PIL import Image, ImageDraw
 import math
 import os
 from dataclasses import dataclass
+import tempfile
+import subprocess
 
 width, height = 64, 32
 frames = []
@@ -33,7 +35,7 @@ def find_intersection(angle):
 
     return x, y
 
-STEPS = 100
+STEPS = 200
 SCALE_FACTOR = 4
 center = SCALE_FACTOR * (width - 1) / 2, SCALE_FACTOR * (height - 1) / 2
 scaled = SCALE_FACTOR * width, SCALE_FACTOR * height
@@ -54,10 +56,34 @@ for step in range(STEPS):
 
 os.makedirs("dist", exist_ok=True)
 frames[0].save(
-    "dist/animation.webp",
+    "dist/animation2.webp",
     save_all=True,
     append_images=frames[1:],
     duration=duration,
     loop=0,
     quality=100,
 )
+
+def convert_frame(self, frame):
+    temp_file = tempfile.NamedTemporaryFile(suffix=".webp", delete=True)
+    frame.save(temp_file.name, "WebP", quality=100)
+    return temp_file
+
+def render(self, frames):
+    in_files = [self.convert_frame(frame) for frame in frames]
+    out_files = []
+    for i in range(4):
+        out_file = DIST_DIR / f"render{i:02d}.webp" 
+        out_files.append(out_file)
+        start = i * 150
+        end = start + 150
+        frames_arg = " ".join(f'-frame {f.name} +{FRAME_TIME}' for f in in_files[start:end])
+        cmd = f"webpmux {frames_arg} -loop 1 -bgcolor 255,255,255,255 -o {out_file}"
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        if result.returncode != 0:
+            raise RuntimeError(result.stderr)
+
+    for f in in_files:
+        f.close()
+
+    return out_files

@@ -100,7 +100,7 @@ def clock_rays(start_time: datetime) -> List[Image.Image]:
     rays = []
     black_image = Image.new("RGB", (WIDTH, HEIGHT), color="black")
     time_image = black_image.copy()
-    for ms in range(0, 60000, 100):
+    for ms in range(0, 15000, 100):
         frame_time = start_time + timedelta(milliseconds=ms)
         time_str = frame_time.strftime("%-I:%M")
         all_time_pixels = get_time_pixels(time_str)
@@ -127,13 +127,3 @@ def clock_rays(start_time: datetime) -> List[Image.Image]:
         time_image = Image.blend(time_image, black_image, alpha=0.04)
         rays = [ray for ray in rays if ray.is_in_bounds()]
     return frames
-
-# os.makedirs("dist", exist_ok=True)
-# frames[0].save(
-#     "dist/animation.webp",
-#     save_all=True,
-#     append_images=frames[1:],
-#     duration=100,
-#     loop=0,
-#     quality=100,
-# )

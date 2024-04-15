@@ -29,8 +29,7 @@ class Command(RichCommand):
             webp_files = self.render(frames)
             for i, webp in enumerate(webp_files):
                 with open(webp, 'rb') as file:
-                    self.console.print(f"file: {webp}")
-                    self.push(file.read(), options['device_id'], f'pb{i}', i == 0)
+                    self.push(file.read(), options['device_id'], f'pb{i}', i != 0)
 
         except Exception as e:
             self.console.print_exception(show_locals=True)
