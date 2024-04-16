@@ -1,9 +1,6 @@
-from django.http import Http404, HttpResponse
-from django.shortcuts import render
+from django.http import HttpResponse
 from main.animation.rays import clock_rays
-from io import BytesIO
 import logging
-import base64
 import pytz
 from datetime import datetime
 import asyncio
@@ -11,7 +8,6 @@ import tempfile
 import aiofiles
 import aiofiles.os
 import subprocess
-import os
 
 
 logger = logging.getLogger(__name__)
@@ -30,29 +26,6 @@ async def get_webp(_):
 
     return response
 
-
-def get_player(request, name: str):
-    frames = None
-    if name == "rays":
-        frames = clock_rays(get_local_time_str())
-        frame_bytes = (encode_frame(frame) for frame in frames)
-        return render(
-            request,
-            "player.html",
-            {"frames": frame_bytes, "title": name, "frame_count": len(frames)},
-        )
-
-    raise Http404(f"Unknown animation {name}")
-
-
-def encode_frame(frame):
-    output = BytesIO()
-    frame.save(
-        output,
-        format="WEBP",
-        quality=100,
-    )
-    return base64.b64encode(output.getvalue()).decode("utf-8")
 
 
 async def convert_frame(frame):
