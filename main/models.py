@@ -1,3 +1,8 @@
 from django.db import models
+from django.utils import timezone
+import tempfile
 
-# Create your models here.
+class Animation(models.Model):
+    created_at = models.DateTimeField(default=timezone.now)
+    file_path = models.FilePathField(path=tempfile.gettempdir())
+    deadline = models.DateTimeField()
