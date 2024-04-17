@@ -2,27 +2,17 @@ import os
 import subprocess
 import base64
 import tempfile
-from rich import print
-from rich.table import Table
 from django_rich.management import RichCommand
 from main.animation.rays import clock_rays
-from io import BytesIO
 import requests
-from pathlib import Path
 from datetime import datetime
 import pytz
 
 FRAME_TIME = 100
-TIDBYT_API_PUSH = "https://api.tidbyt.com/v0/devices/%s/push"
-DIST_DIR = Path("dist")
 class Command(RichCommand):
-    help = 'pushes animation to device'
-
-    def add_arguments(self, parser):
-        parser.add_argument('device_id', type=str, help='Device ID')
+    help = 'Updates animation table'
 
     def handle(self, *args, **options):
-        print("[bold magenta]:ship: DEPLOY[/bold magenta]")
         try:
             los_angeles_tz = pytz.timezone('America/Los_Angeles')
             frames = clock_rays(datetime.now(los_angeles_tz))
@@ -34,29 +24,6 @@ class Command(RichCommand):
         except Exception as e:
             self.console.print_exception(show_locals=True)
             raise e
-
-    def push(self, image_bytes, device_id, installation_id, background):
-        api_token = os.getenv("TIDBYT_TOKEN")
-
-        if not api_token:
-            raise ValueError(f"Blank Tidbyt API token (set TIDBYT_TOKEN)")
-
-        payload = {
-            "deviceID": device_id,
-            "image": base64.b64encode(image_bytes).decode("utf-8"),
-            "installationID": installation_id,
-            "background": background,
-        }
-
-        headers = {"Authorization": f"Bearer {api_token}"}
-        response = requests.post(TIDBYT_API_PUSH % device_id, json=payload, headers=headers)
-
-        if response.status_code != 200:
-            self.console.print(f"Tidbyt API returned status {response.status_code}")
-            self.console.print(response.text)
-        else:
-            ground = "Background" if background else "Foreground"
-            self.console.print(f":green_circle: [green] Sent {installation_id} in {ground} [/green]")
 
     def convert_frame(self, frame):
         temp_file = tempfile.NamedTemporaryFile(suffix=".webp", delete=True)
