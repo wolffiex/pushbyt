@@ -1,6 +1,6 @@
 import subprocess
 from PIL import Image
-from typing import Optional, List
+from typing import Optional, Generator
 import tempfile
 from datetime import datetime, timedelta
 from django_rich.management import RichCommand
@@ -8,12 +8,10 @@ from main.animation.rays2 import clock_rays
 from pathlib import Path
 import itertools
 import pytz
-import aiofiles
-import asyncio
-from asgiref.sync import async_to_sync
+from django.utils import timezone
 
 FRAME_TIME = timedelta(milliseconds=100)
-DURATION = timedelta(seconds=15)
+DURATION = timedelta(seconds=11)
 FRAME_COUNT = DURATION / FRAME_TIME
 
 
@@ -22,64 +20,47 @@ class Command(RichCommand):
 
     def handle(self, *args, **options):
         try:
-            anim_files = self.create_animations()
-            self.console.print(anim_files)
+            start_time = self.get_next_animation_time()
+            if start_time:
+                for anim_file in self.create_animations(start_time):
+                    self.console.print(anim_file)
         except Exception as e:
             self.console.print_exception(show_locals=True)
             raise e
 
-    @async_to_sync
-    async def create_animations(self) -> List[Path]:
-        start_time = self.get_next_animation_time()
-        if not start_time:
-            return list()
-        end_time = start_time + timedelta(minutes=5)
-        los_angeles_tz = pytz.timezone("America/Los_Angeles")
-        localized_time = los_angeles_tz.localize(start_time)
-        frames = clock_rays(datetime.now(los_angeles_tz), FRAME_TIME)
-        anim_tasks = []
+    def get_next_animation_time(self) -> Optional[datetime]:
+        return timezone.localtime()
+
+    def create_animations(self, start_time: datetime) -> Generator[Path, None, None]:
+        end_time = start_time + timedelta(minutes=1)
+        self.console.print(start_time)
+        frames = clock_rays(start_time, FRAME_TIME)
         anim_time = start_time
         while anim_time < end_time:
-            anim_tasks.append(self.render(list(itertools.islice(frames, int(FRAME_COUNT)))))
+            yield self.render(list(itertools.islice(frames, int(FRAME_COUNT))))
             anim_time += DURATION
 
-        webp_files = self.render(frames)
-        for i, webp in enumerate(webp_files):
-            with open(webp, "rb") as file:
-                self.push(file.read(), options["device_id"], f"pb{i}", i != 0)
+    def render(self, frames) -> Path:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            in_files = [
+                self.convert_frame(temp_path, i, frame)
+                for i, frame in enumerate(frames)
+            ]
+            with tempfile.NamedTemporaryFile(suffix=".webp", delete=False) as temp_file:
+                out_file = temp_file.name
+            frames_arg = " ".join(
+                f"-frame {tf} +{FRAME_TIME.total_seconds() * 1000}" for tf in in_files
+            )
+            cmd = f"webpmux {frames_arg} -loop 1 -bgcolor 255,255,255,255 -o {out_file}"
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+            if result.returncode != 0:
+                raise RuntimeError(result.stderr)
+            return Path(out_file)
 
-    async def render(self, frames):
-        convert_tasks = [asyncio.create_task(self.convert_frame(i, frame)) for i,frame in enumerate(frames)]
-        in_files = await asyncio.gather(*convert_tasks)
-        with tempfile.NamedTemporaryFile(suffix=".webp", delete=False) as temp_file:
-            out_file = temp_file.name
-        frames_arg = " ".join(f"-frame {tf} +{FRAME_TIME}" for tf in in_files)
-        cmd = f"webpmux {frames_arg} -loop 1 -bgcolor 255,255,255,255 -o {out_file}"
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-        if result.returncode != 0:
-            raise RuntimeError(result.stderr)
-
-        with open(out_file, "rb") as file:
-            file_bytes = file.read()
-
-        removal_tasks = [
-            asyncio.create_task(remove_temp_file(temp_file))
-            for temp_file in in_files + [out_file]
-        ]
-        await asyncio.gather(*removal_tasks)
-
-        return file_bytes
-
-    def get_next_animation_time(self) -> Optional[datetime]:
-        pass
-
-    async def convert_frame(self, frame_num:int, frame:Image.Image):
-        async with aiofiles.tempfile.NamedTemporaryFile(
-            suffix=".webp", delete=False
-        ) as temp_file:
-            frame_name = temp_file.name
-        frame.save(frame_name, "WebP", quality=100)
-        return frame_name
-
-    async def remove_temp_file(self, temp_file):
-        await aiofiles.os.unlink(temp_file)
+    def convert_frame(
+        self, frame_dir: Path, frame_num: int, frame: Image.Image
+    ) -> Path:
+        frame_file = frame_dir / f"frame{frame_num:04d}.webp"
+        frame.save(frame_file, "WebP", quality=100)
+        return frame_file
