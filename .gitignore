@@ -2,3 +2,4 @@
 out*.webp
 dist/**
 .python-version
+render/**

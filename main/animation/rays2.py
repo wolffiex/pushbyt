@@ -1,7 +1,6 @@
 from PIL import Image, ImageDraw, ImageFont, ImageChops
 import math
 import random
-from datetime import datetime, timedelta
 from dataclasses import dataclass
 from typing import Generator
 
