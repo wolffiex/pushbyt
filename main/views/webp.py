@@ -1,7 +1,6 @@
 from django.http import HttpResponse
 from main.animation.rays import clock_rays
 import logging
-import pytz
 from datetime import datetime
 import asyncio
 import tempfile

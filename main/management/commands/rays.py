@@ -1,28 +1,43 @@
 import subprocess
 from PIL import Image
-from typing import Optional
+from typing import Optional, List
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from django_rich.management import RichCommand
 from main.animation.rays2 import clock_rays
 from pathlib import Path
 import itertools
 from django.utils import timezone
 from main.models import Animation
+import os
 
 FRAME_TIME = timedelta(milliseconds=100)
-DURATION = timedelta(seconds=11)
+DURATION = timedelta(seconds=15)
 FRAME_COUNT = DURATION / FRAME_TIME
 
 
+def time_to_str(t:time):
+    return t.strftime("%-I:%M")
+
 class Command(RichCommand):
-    help = "Updates animation table"
+    help = "Renders rays clock"
 
     def handle(self, *args, **options):
+        frames = clock_rays()
+        next(frames)
         try:
-            start_time = self.get_next_animation_time()
-            if start_time:
-                self.create_animations(start_time)
+            os.makedirs("dist/rays", exist_ok=True)
+            for hour in range(1, 13):
+                for minute in range(0, 60):
+                    time_str = f"{hour}:{minute}"
+                    # each minute divided into 4 parts of 15 seconds
+                    for part in range(0, 3):
+                        anim_file = Path("dist/rays") / f"ray-{hour:02d}-{minute:02d}-{part}.webp"
+                        anim_frames = []
+                        for _ in range(int(FRAME_COUNT)):
+                            anim_frames.append(frames.send(time_str))
+                        self.render(anim_file, anim_frames)
+                        self.console.print(anim_file)
         except Exception as e:
             self.console.print_exception(show_locals=True)
             raise e
@@ -30,35 +45,20 @@ class Command(RichCommand):
     def get_next_animation_time(self) -> Optional[datetime]:
         return timezone.localtime()
 
-    def create_animations(self, start_time: datetime):
-        end_time = start_time + timedelta(minutes=1)
-        self.console.print(start_time)
-        frames = clock_rays(start_time, FRAME_TIME)
-        anim_time = start_time
-        animations = []
-        while anim_time < end_time:
-            anim_file = self.render(list(itertools.islice(frames, int(FRAME_COUNT))))
-            animations.append(Animation(file_path=anim_file, deadline=anim_time))
-            anim_time += DURATION
-        Animation.objects.bulk_create(animations)
-
-    def render(self, frames) -> Path:
+    def render(self, anim_file: Path, frames:List[Image.Image]):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
             in_files = [
                 self.convert_frame(temp_path, i, frame)
                 for i, frame in enumerate(frames)
             ]
-            with tempfile.NamedTemporaryFile(suffix=".webp", delete=False) as temp_file:
-                out_file = temp_file.name
             frames_arg = " ".join(
                 f"-frame {tf} +{FRAME_TIME.total_seconds() * 1000}" for tf in in_files
             )
-            cmd = f"webpmux {frames_arg} -loop 1 -bgcolor 255,255,255,255 -o {out_file}"
+            cmd = f"webpmux {frames_arg} -loop 1 -bgcolor 255,255,255,255 -o {anim_file}"
             result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
             if result.returncode != 0:
                 raise RuntimeError(result.stderr)
-            return Path(out_file)
 
     def convert_frame(
         self, frame_dir: Path, frame_num: int, frame: Image.Image

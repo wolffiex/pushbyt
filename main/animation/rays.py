@@ -4,7 +4,6 @@ import random
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 from typing import List
-import pytz
 
 
 @dataclass(frozen=True)
@@ -20,38 +19,6 @@ WIDTH, HEIGHT = 64, 32
 SCALE_FACTOR = 4
 CENTER = Point(SCALE_FACTOR * WIDTH / 2, SCALE_FACTOR * HEIGHT / 2)
 SCALED_WIDTH, SCALED_HEIGHT = SCALE_FACTOR * WIDTH, SCALE_FACTOR * HEIGHT
-
-#  fonts
-# ├──  freecam
-# │  ├──  freecam v2.ttf
-# │  └──  readme.txt
-# ├──  pixel12x10
-# │  ├──  OFL.txt
-# │  ├──  Pixel12x10-v1.1.0.ttf
-# │  └──  Pixel12x10Mono-v1.1.0.ttf
-# ├──  pixel_operator
-# │  ├──  LICENSE.txt
-# │  ├──  PixelOperator-Bold.ttf
-# │  ├──  PixelOperator.ttf
-# │  ├──  PixelOperator8-Bold.ttf
-# │  ├──  PixelOperator8.ttf
-# │  ├──  PixelOperatorHB.ttf
-# │  ├──  PixelOperatorHB8.ttf
-# │  ├──  PixelOperatorHBSC.ttf
-# │  ├──  PixelOperatorMono-Bold.ttf
-# │  ├──  PixelOperatorMono.ttf
-# │  ├──  PixelOperatorMono8-Bold.ttf
-# │  ├──  PixelOperatorMono8.ttf
-# │  ├──  PixelOperatorMonoHB.ttf
-# │  ├──  PixelOperatorMonoHB8.ttf
-# │  ├──  PixelOperatorSC-Bold.ttf
-# │  └──  PixelOperatorSC.ttf
-# ├──  pixelmix
-# │  ├──  license.txt
-# │  ├──  pixelmix.ttf
-# │  ├──  pixelmix_bold.ttf
-# │  └──  readme.txt
-# └──  videotype.ttf
 
 def get_time_pixels(time_str):
     image = Image.new("RGB", (WIDTH, HEIGHT), color="black")

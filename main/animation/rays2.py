@@ -20,6 +20,7 @@ SCALE_FACTOR = 4
 CENTER = Point(SCALE_FACTOR * WIDTH / 2, SCALE_FACTOR * HEIGHT / 2)
 SCALED_WIDTH, SCALED_HEIGHT = SCALE_FACTOR * WIDTH, SCALE_FACTOR * HEIGHT
 
+
 def get_time_pixels(time_str):
     image = Image.new("RGB", (WIDTH, HEIGHT), color="black")
     # font = ImageFont.truetype("./fonts/pixelmix/pixelmix.ttf", 8)
@@ -43,12 +44,6 @@ def get_time_pixels(time_str):
 
 
 frames = [Image.new("RGB", (WIDTH, HEIGHT), color="black")]
-
-
-def combine_colors(aa, bb):
-    color = tuple(max(0, min(255, a + b)) for a, b in zip(aa, bb))
-    assert len(color) == 3
-    return color
 
 
 @dataclass
@@ -94,13 +89,14 @@ class Ray:
         return Point(x, y)
 
 
-def clock_rays(start_time: datetime, time_step: timedelta) -> Generator[Image.Image, None, None]:
+def clock_rays() -> Generator[Image.Image, str, None]:
     rays = []
     black_image = Image.new("RGB", (WIDTH, HEIGHT), color="black")
     time_image = black_image.copy()
-    frame_time = start_time
+    time_str = None
+    next_frame = black_image
     while True:
-        time_str = frame_time.strftime("%-I:%M")
+        time_str = yield next_frame
         all_time_pixels = get_time_pixels(time_str)
         for _ in range(random.randint(1, 4)):
             rays.append(Ray.new())
@@ -120,8 +116,13 @@ def clock_rays(start_time: datetime, time_step: timedelta) -> Generator[Image.Im
                 (x, y), combine_colors(image_pixels[x, y], time_pixels[x, y])
             )
 
-        yield ImageChops.screen(image_lo, time_image)
+        next_frame = ImageChops.screen(image_lo, time_image)
         # fade time image
         time_image = Image.blend(time_image, black_image, alpha=0.04)
         rays = [ray for ray in rays if ray.is_in_bounds()]
-        frame_time += time_step
+
+
+def combine_colors(aa, bb):
+    color = tuple(max(0, min(255, a + b)) for a, b in zip(aa, bb))
+    assert len(color) == 3
+    return color

@@ -5,7 +5,6 @@ from main.animation.rays import clock_rays
 from io import BytesIO
 import logging
 import base64
-import pytz
 from datetime import datetime
 import asyncio
 import tempfile
