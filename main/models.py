@@ -2,6 +2,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from datetime import datetime
+from django.db import transaction
+from django.http import HttpResponse
 
 
 class Animation(models.Model):
@@ -31,3 +33,7 @@ class Animation(models.Model):
             .order_by("start_time")
             .first()
         )
+
+class Lock(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    acquired = models.BooleanField(default=False)
