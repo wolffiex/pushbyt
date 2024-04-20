@@ -47,7 +47,7 @@ class Command(RichCommand):
         return now.replace(second=next_second, microsecond=0)
 
     def create_animations(self, start_time: datetime):
-        end_time = start_time + timedelta(minutes=1)
+        end_time = start_time + timedelta(minutes=5)
         self.console.print(start_time)
         frames = clock_rays()
         next(frames)

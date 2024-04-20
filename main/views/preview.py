@@ -1,11 +1,13 @@
-from datetime import datetime, timedelta
+from django.utils import timezone
 from django.shortcuts import redirect
 from django.templatetags.static import static
+from main.models import Animation
 
 def get_preview(request):
-    showtime = datetime.now() + timedelta(seconds=5)
-    hour = showtime.hour
-    minute = showtime.minute
-    part = showtime.second // 15
-    anim_file = f"anim-{hour:02d}-{minute:02d}-{part}.webp"
-    return redirect(static(str(anim_file)))
+    now = timezone.now()
+    anim = Animation.get_next_animation(now)
+    if anim:
+        anim.served_at = now
+        anim.save()
+        return redirect(f"/pushbyt/{anim.file_path}")
+    return redirect(static("error.webp"))
