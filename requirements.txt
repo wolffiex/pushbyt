@@ -9,12 +9,14 @@ django-rich==1.8.0
 django-stubs==4.2.7
 django-stubs-ext==4.2.7
 executing==2.0.1
+gunicorn==22.0.0
 idna==3.6
 ipython==8.23.0
 jedi==0.19.1
 markdown-it-py==3.0.0
 matplotlib-inline==0.1.6
 mdurl==0.1.2
+packaging==24.0
 parso==0.8.4
 pexpect==4.9.0
 pillow==10.2.0
