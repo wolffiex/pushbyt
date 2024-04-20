@@ -12,11 +12,6 @@ import subprocess
 logger = logging.getLogger(__name__)
 
 
-def get_local_time_str():
-    los_angeles_tz = pytz.timezone("America/Los_Angeles")
-    return datetime.now(los_angeles_tz)
-
-
 async def get_webp(_):
     frames = clock_rays(get_local_time_str())
     webp_bytes = await webpmux(frames)
