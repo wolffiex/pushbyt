@@ -1,9 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-from datetime import datetime
-from django.db import transaction
-from django.http import HttpResponse
+from datetime import datetime, timedelta
 
 
 class Animation(models.Model):
@@ -33,6 +31,21 @@ class Animation(models.Model):
             .order_by("start_time")
             .first()
         )
+
+    @staticmethod
+    def align_time(t: datetime) -> datetime:
+        second = t.second
+        if 0 <= second < 15:
+            next_second = 15
+        elif 15 <= second < 30:
+            next_second = 30
+        elif 30 <= second < 45:
+            next_second = 45
+        else:
+            next_second = 0
+            t += timedelta(minutes=1)
+
+        return t.replace(second=next_second, microsecond=0)
 
 class Lock(models.Model):
     name = models.CharField(max_length=100, unique=True)

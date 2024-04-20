@@ -17,8 +17,9 @@ ANIM_DURATION = timedelta(seconds=15)
 FRAME_COUNT = ANIM_DURATION / FRAME_TIME
 RENDER_DIR = Path("render")
 
+
 def generate(_):
-    lock_name = 'generate'
+    lock_name = "generate"
 
     with transaction.atomic():
         lock, _ = Lock.objects.select_for_update().get_or_create(name=lock_name)
@@ -38,21 +39,24 @@ def generate(_):
             lock.acquired = False
             lock.save()
 
+
 def get_next_animation_time() -> Optional[datetime]:
     now = timezone.localtime()
-    second = now.second
 
-    if 0 <= second < 15:
-        next_second = 15
-    elif 15 <= second < 30:
-        next_second = 30
-    elif 30 <= second < 45:
-        next_second = 45
-    else:
-        next_second = 0
-        now += timedelta(minutes=1)
+    one_minute_ago = now - timedelta(minutes=1)
 
-    return now.replace(second=next_second, microsecond=0)
+    # If we haven't gotten a request in the last minute, then don't generate
+    if not Animation.objects.filter(served_at__gt=one_minute_ago).exists():
+        return
+
+    last_animation = Animation.objects.latest("start_time")
+    next_time = max(last_animation.start_time, now)
+    # No need to generate if we have animations more than two minutes hence
+    if next_time > now + timedelta(minutes=2):
+        return
+
+    return Animation.align_time(next_time)
+
 
 def create_animations(start_time: datetime):
     end_time = start_time + timedelta(minutes=5)
@@ -79,26 +83,23 @@ def create_animations(start_time: datetime):
         )
     Animation.objects.bulk_create(animations)
 
+
 def render(frames, file_path):
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         in_files = [
-            convert_frame(temp_path, i, frame)
-            for i, frame in enumerate(frames)
+            convert_frame(temp_path, i, frame) for i, frame in enumerate(frames)
         ]
         frames_arg = " ".join(
             f"-frame {tf} +{FRAME_TIME.total_seconds() * 1000}" for tf in in_files
         )
-        cmd = (
-            f"webpmux {frames_arg} -loop 1 -bgcolor 255,255,255,255 -o {file_path}"
-        )
+        cmd = f"webpmux {frames_arg} -loop 1 -bgcolor 255,255,255,255 -o {file_path}"
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         if result.returncode != 0:
             raise RuntimeError(result.stderr)
 
-def convert_frame(
-    frame_dir: Path, frame_num: int, frame: Image.Image
-) -> Path:
+
+def convert_frame(frame_dir: Path, frame_num: int, frame: Image.Image) -> Path:
     frame_file = frame_dir / f"frame{frame_num:04d}.webp"
     frame.save(frame_file, "WebP", quality=100)
     return frame_file
