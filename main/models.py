@@ -2,11 +2,12 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from datetime import datetime, timedelta
+from django.templatetags.static import static
 
 
 class Animation(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
-    file_path = models.FilePathField(path="render")
+    file_path = models.FilePathField(path="render", null=True, blank=True)
     start_time = models.DateTimeField()
     served_at = models.DateTimeField(null=True, blank=True, default=None)
 
@@ -46,6 +47,11 @@ class Animation(models.Model):
             t += timedelta(minutes=1)
 
         return t.replace(second=next_second, microsecond=0)
+
+    @property
+    def url(self):
+        return "/pushbyt/" + self.file_path if self.file_path else static("missing.webp")
+
 
 class Lock(models.Model):
     name = models.CharField(max_length=100, unique=True)

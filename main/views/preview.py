@@ -1,6 +1,5 @@
 from django.utils import timezone
 from django.shortcuts import redirect
-from django.templatetags.static import static
 from main.models import Animation
 import logging
 
@@ -16,9 +15,7 @@ def get_preview(_):
                 f"Already served {anim.file_path} at {anim.served_at} now {now}"
             )
     else:
-        anim = Animation(
-            file_path=static("error.webp"), start_time=Animation.align_time(now)
-        )
+        anim = Animation(start_time=Animation.align_time(now))
     anim.served_at = now
     anim.save()
-    return redirect(f"{anim.file_path}")
+    return redirect(anim.url)
