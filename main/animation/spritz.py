@@ -48,6 +48,8 @@ class FrameGenerator(ABC):
 
 class Spritz(FrameGenerator):
     FRAME_TIME = timedelta(milliseconds=120)
+    TEXT_TOP = FrameGenerator.HEIGHT /2 - 4
+    TEXT_MID = FrameGenerator.WIDTH // 3
 
     def __init__(self, start_time: datetime, copy):
         self.start_time = start_time
@@ -55,19 +57,46 @@ class Spritz(FrameGenerator):
         self.tokens = self.tokenize(copy)
 
     def _gen_frames(self):
-        black_image = Image.new("RGB", (self.WIDTH, self.HEIGHT), color="black")
         font = ImageFont.truetype("./fonts/pixelmix/pixelmix.ttf", 8)
         for token in self.tokens:
-            image = black_image.copy()
-            draw = ImageDraw.Draw(image)
-            bbox = draw.textbbox((0, 0), token, font=font)
-            left, top, right, bottom = bbox
-            text_width = right - left
-            text_height = bottom - top
-            new_left = (self.WIDTH - text_width) // 2
-            new_top = (self.HEIGHT - text_height) // 2
-            draw.text((new_left, new_top), token, font=font, fill="white")
-            yield image
+            yield self.render(token, font)
+
+    def render(self, token:str, font) -> Image.Image:
+        # print(f"|{token}|")
+        start, mid, end = self.word_split(token)
+        image = Image.new("RGB", (self.WIDTH, self.HEIGHT), color="black")
+        draw = ImageDraw.Draw(image)
+        mid_width = self.measure(mid, font)
+        mid_left = self.TEXT_MID - mid_width // 2
+        draw.text((mid_left, self.TEXT_TOP), mid, font=font, fill=(255, 50, 50))
+        if start:
+            start_width = self.measure(start, font)
+            start_left = mid_left - start_width
+            draw.text((start_left, self.TEXT_TOP), start, font=font, fill="white")
+        if end:
+            end_left = mid_left + mid_width
+            draw.text((end_left, self.TEXT_TOP), end, font=font, fill="white")
+        return image
+
+    def word_split(self, token:str):
+        token_len = len(token)
+        if token_len == 1:
+            return "", token, ""
+        elif token_len == 2:
+            return token[0], token[1], ""
+        elif token_len < 5:
+            return token[0], token[1], token[2:]
+        elif token_len < 7:
+            return token[0:2], token[2], token[3:]
+        else:
+            return token[0:3], token[3], token[4:]
+
+    def measure(self, text:str, font) -> int:
+        image = Image.new("RGB", (self.WIDTH, self.HEIGHT), color="black")
+        draw = ImageDraw.Draw(image)
+        bbox = draw.textbbox((0, 0), text, font=font)
+        left, _, right, _ = bbox
+        return right - left
 
     def tokenize(self, copy: str) -> Generator[str, None, None]:
         last_token = ""
@@ -83,7 +112,7 @@ class Spritz(FrameGenerator):
             yield last_token
 
     def is_word(self, token: str) -> bool:
-        return True
+        return bool(token)
 
 
 text_copy = """Baking the chicken wings at 375 degrees F for one hour instead of 400 degrees F for 45 minutes is a reasonable adjustment and can work well, depending on your preferences. Here are a few considerations for using this approach:
