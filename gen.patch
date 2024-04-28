@@ -1,0 +1,35 @@
+diff --git a/main/views/generate.py b/main/views/generate.py
+index b55de42..b72fb9c 100644
+--- a/main/views/generate.py
++++ b/main/views/generate.py
+@@ -11,6 +11,9 @@ from main.animation.rays2 import clock_rays
+ from pathlib import Path
+ from django.utils import timezone
+ from main.models import Animation
++import logging
++
++logger = logging.getLogger(__name__)
+ 
+ FRAME_TIME = timedelta(milliseconds=100)
+ ANIM_DURATION = timedelta(seconds=15)
+@@ -30,6 +33,7 @@ def generate(_):
+ 
+     try:
+         start_time = get_next_animation_time()
++        logger.info(f"Generate start_time {start_time.strftime("%j-%H-%M-%S") if start_time else None}")
+         if start_time:
+             os.makedirs(RENDER_DIR, exist_ok=True)
+             create_animations(start_time)
+@@ -47,9 +51,12 @@ def get_next_animation_time() -> Optional[datetime]:
+ 
+     # If we haven't gotten a request in the last minute, then don't generate
+     if not Animation.objects.filter(served_at__gt=one_minute_ago).exists():
++        logger.info(f"Not served {now.strftime("%j-%H-%M-%S")}")
+         return
+ 
+     last_animation = Animation.objects.latest("start_time")
++    logger.info(f"Next anim time now {now.strftime("%j-%H-%M-%S")}")
++    logger.info(f"Next anim time last {last_animation.start_time.strftime("%j-%H-%M-%S")}")
+     next_time = max(last_animation.start_time, now)
+     # No need to generate if we have animations more than two minutes hence
+     if next_time > now + timedelta(minutes=2):

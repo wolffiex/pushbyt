@@ -1,7 +1,7 @@
 
 from django.http import Http404
 from django.shortcuts import render
-from main.animation.rays import clock_rays
+from main.animation.rays2 import clock_rays
 from io import BytesIO
 import logging
 import base64
