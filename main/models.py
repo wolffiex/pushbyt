@@ -14,6 +14,11 @@ class Animation(models.Model):
     class Meta:
         indexes = [models.Index(fields=["start_time"])]
 
+    @property
+    def start_time_local(self):
+        return self.start_time.astimezone(timezone.get_current_timezone())
+
+
     def clean(self):
         super().clean()
         if self.start_time.microsecond != 0:

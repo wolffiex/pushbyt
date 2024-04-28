@@ -50,7 +50,7 @@ def get_next_animation_time() -> Optional[datetime]:
         return
 
     last_animation = Animation.objects.latest("start_time")
-    next_time = max(last_animation.start_time, now)
+    next_time = max(last_animation.start_time_local, now)
     # No need to generate if we have animations more than two minutes hence
     if next_time > now + timedelta(minutes=2):
         return
