@@ -1,4 +1,4 @@
-from django.db import transaction
+from django.db import transaction, OperationalError
 from django.http import HttpResponse
 from main.models import Lock
 from typing import Optional
@@ -21,12 +21,15 @@ RENDER_DIR = Path("render")
 def generate(_):
     lock_name = "generate"
 
-    with transaction.atomic():
-        lock, _ = Lock.objects.select_for_update().get_or_create(name=lock_name)
-        if lock.acquired:
-            return HttpResponse("Endpoint is already running", status=409)
-        lock.acquired = True
-        lock.save()
+    try:
+        with transaction.atomic():
+            lock, _ = Lock.objects.select_for_update(nowait=True).get_or_create(name=lock_name)
+            if lock.acquired:
+                return HttpResponse("Endpoint is already running", status=409)
+            lock.acquired = True
+            lock.save()
+    except OperationalError:
+        return HttpResponse("Failed to acquire lock", status=500)
 
     try:
         start_time = get_next_animation_time()
