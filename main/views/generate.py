@@ -11,12 +11,16 @@ from main.animation.rays2 import clock_rays
 from pathlib import Path
 from django.utils import timezone
 from main.models import Animation
+import logging
+
 
 FRAME_TIME = timedelta(milliseconds=100)
 ANIM_DURATION = timedelta(seconds=15)
 FRAME_COUNT = ANIM_DURATION / FRAME_TIME
 RENDER_DIR = Path("render")
 
+
+logger = logging.getLogger(__name__)
 
 def generate(_):
     lock_name = "generate"
@@ -33,6 +37,7 @@ def generate(_):
 
     try:
         start_time = get_next_animation_time()
+        logger.info(f'next animation time {start_time}')
         if start_time:
             os.makedirs(RENDER_DIR, exist_ok=True)
             create_animations(start_time)

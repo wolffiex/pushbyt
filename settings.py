@@ -114,7 +114,10 @@ LOGGING = {
             "level": "DEBUG",
         }
     },
-    "loggers": {"django": {"handlers": ["console"]}},
+    "loggers": {
+        "django": {"handlers": ["console"], "propagate":False},
+        "root": {"handlers": ["console"], "level": "INFO"},
+    },
 }
 
 # Internationalization
