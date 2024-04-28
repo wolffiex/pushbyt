@@ -46,7 +46,7 @@ class Animation(models.Model):
             next_second = 0
             t += timedelta(minutes=1)
 
-        return t.replace(second=next_second, microsecond=0)
+        return t.replace(second=next_second, microsecond=0, tzinfo=t.tzinfo)
 
     @property
     def url(self):
