@@ -1,5 +1,5 @@
 from django.contrib import admin
-from models import Animation
+from main.models import Animation
 
 admin.site.register(Animation)
 
