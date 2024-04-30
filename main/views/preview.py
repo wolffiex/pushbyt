@@ -1,3 +1,4 @@
+from django.views.decorators.cache import cache_control
 from django.utils import timezone
 from django.shortcuts import redirect
 from main.models import Animation
@@ -6,6 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 def get_preview(_):
     now = timezone.now()
     anim = Animation.get_next_animation(now)
